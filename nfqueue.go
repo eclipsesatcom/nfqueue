@@ -119,8 +119,20 @@ func (p *Packet) Modify(buffer []byte) error {
 	return p.setVerdict(C.NF_ACCEPT, C.u_int32_t(len(buffer)), (*C.uchar)(unsafe.Pointer(&buffer[0])))
 }
 
+// Mark the packet
+func (p *Packet) Mark(mark int32) error {
+	return p.setVerdict2(C.NF_ACCEPT, 0, mark, nil)
+}
+
 func (p *Packet) setVerdict(verdict, len C.u_int32_t, buffer *C.uchar) error {
 	if C.nfq_set_verdict(p.q.qh, C.u_int32_t(p.id), verdict, len, buffer) < 0 {
+		return fmt.Errorf("Error setting verdict %d for packet %d", verdict, p.id)
+	}
+	return nil
+}
+
+func (p *Packet) setVerdict2(verdict, len C.u_int32_t, mark int32, buffer *C.uchar) error {
+	if C.nfq_set_verdict2(p.q.qh, C.u_int32_t(p.id), verdict, C.u_int32_t(mark), len, buffer) < 0 {
 		return fmt.Errorf("Error setting verdict %d for packet %d", verdict, p.id)
 	}
 	return nil
